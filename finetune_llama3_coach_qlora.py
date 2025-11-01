@@ -25,36 +25,38 @@ if tokenizer.pad_token is None:
     tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 
 # ---------------- MODEL (4-bit) ---------
+from peft import prepare_model_for_kbit_training, LoraConfig, get_peft_model
+
 model = AutoModelForCausalLM.from_pretrained(
     BASE_MODEL,
-    load_in_4bit=True,              # QLoRA
+    load_in_4bit=True,
     torch_dtype=torch.float16,
     device_map="auto",
-    low_cpu_mem_usage=True,
-    offload_folder=OFFLOAD_DIR,     # spill extra to disk if VRAM tight
 )
-# Resize embeddings if we added a PAD token
-model.resize_token_embeddings(len(tokenizer))
 
-# Save VRAM
-model.gradient_checkpointing_disable()
-model.config.use_cache = False
+# 🔧 Prepare for 4-bit training
 model = prepare_model_for_kbit_training(model)
 
-# ---------------- LoRA ------------------
-# For Llama-3, q_proj/v_proj is fine; you can expand to k_proj,o_proj,up/down/gate_proj later.
-lora_config = LoraConfig(
+# 🧩 LoRA config
+lora_cfg = LoraConfig(
     r=16,
     lora_alpha=32,
-    target_modules=["q_proj", "v_proj"],
+    target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
     lora_dropout=0.05,
     bias="none",
     task_type="CAUSAL_LM",
 )
-model = get_peft_model(model, lora_config)
+model = get_peft_model(model, lora_cfg)
+
+# ✅ Disable all checkpointing and caching
+if hasattr(model, "gradient_checkpointing_disable"):
+    model.gradient_checkpointing_disable()
+if hasattr(model.config, "use_cache"):
+    model.config.use_cache = False
+
 model.train()
 
-print("✅ Model and tokenizer ready.")
+
 
 # ---------------- DATA ------------------
 print(f"📂 Loading dataset: {DATA_FILE}")
