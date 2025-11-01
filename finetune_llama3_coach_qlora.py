@@ -17,8 +17,15 @@ bnb_config = BitsAndBytesConfig(
 
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 tokenizer.pad_token = tokenizer.eos_token
-model = AutoModelForCausalLM.from_pretrained(model_name, quantization_config=bnb_config, device_map="auto")
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
+model = AutoModelForCausalLM.from_pretrained(
+    BASE_MODEL,
+    torch_dtype="auto",
+    device_map="auto",
+    load_in_4bit=True,         # QLoRA: load model in 4-bit precision
+)
+tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
 dataset = load_dataset("csv", data_files={"train": dataset_path})
 
 def tokenize_function(batch):
