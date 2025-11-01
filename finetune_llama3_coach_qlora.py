@@ -54,11 +54,24 @@ lora_config = LoraConfig(
 model = get_peft_model(model, lora_config)
 
 # ---------------- DATA --------------------
+from datasets import load_dataset
+
+# Load your dataset
 dataset = load_dataset("csv", data_files={"train": DATA_FILE})
-def format_sample(sample):
-    text = sample["text"] if "text" in sample else str(sample)
-    return {"input_ids": tokenizer(text, truncation=True, padding="max_length", max_length=256)["input_ids"]}
-dataset = dataset.map(format_sample, batched=False)
+
+# Properly tokenize and set up both inputs and labels for causal LM training
+def tokenize_function(sample):
+    text = sample.get("text") or str(sample)
+    tokenized = tokenizer(
+        text,
+        truncation=True,
+        padding="max_length",
+        max_length=256,
+    )
+    tokenized["labels"] = tokenized["input_ids"].copy()  # <- This is crucial
+    return tokenized
+
+dataset = dataset.map(tokenize_function, batched=True)
 
 # ---------------- TRAINING ----------------
 training_args = TrainingArguments(
