@@ -4,7 +4,7 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, TrainingArguments, Trainer
 from datasets import load_dataset
 import torch, os
-
+BASE_MODEL = "mistralai/Mistral-7B-Instruct-v0.2"
 model_name = "mistralai/Mistral-7B-Instruct-v0.2"  # or TinyLlama/TinyLlama-1.1B-Chat-v1.0
 dataset_path = "football_trimmed.csv"  # dataset in same folder
 
