@@ -42,7 +42,7 @@ model.train()
 
 # ----------------- Dataset -----------------
 print("📘 Loading dataset…")
-raw = load_dataset("json", data_files={"train": DATA_FILE})["train"]
+raw = load_dataset("json", data_files={"football_tactical_technical_5k.jsonl": DATA_FILE})["train"]
 
 def tokenize_fn(batch):
     texts = [
