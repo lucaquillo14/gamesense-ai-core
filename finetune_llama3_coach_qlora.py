@@ -18,6 +18,10 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 print(f"🧠 Loading base model: {BASE_MODEL}")
 tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
 
+# ✅ Ensure pad token exists
+if tokenizer.pad_token is None:
+    tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+    model.resize_token_embeddings(len(tokenizer))
 model = AutoModelForCausalLM.from_pretrained(
     BASE_MODEL,
     load_in_4bit=True,
