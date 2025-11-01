@@ -37,7 +37,7 @@ model = AutoModelForCausalLM.from_pretrained(
 model.resize_token_embeddings(len(tokenizer))
 
 # Save VRAM
-model.gradient_checkpointing_enable()
+model.gradient_checkpointing_disable()
 model.config.use_cache = False
 model = prepare_model_for_kbit_training(model)
 
