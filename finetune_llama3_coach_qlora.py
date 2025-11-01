@@ -1,72 +1,74 @@
-# ------------------------------------------------------------
-# Fine-tune LLaMA-3 (8B or smaller) for Football Coaching with QLoRA
-# ------------------------------------------------------------
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, TrainingArguments, Trainer
+# finetune_llama3_coach_qlora.py
+# -----------------------------------------
+# Fine-tunes an open LLM (Mistral or TinyLlama) on football coaching data
+
+from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments, Trainer
 from datasets import load_dataset
-import torch, os
-BASE_MODEL = "mistralai/Mistral-7B-Instruct-v0.2"
-model_name = "mistralai/Mistral-7B-Instruct-v0.2"  # or TinyLlama/TinyLlama-1.1B-Chat-v1.0
-dataset_path = "football_trimmed.csv"  # dataset in same folder
-
-bnb_config = BitsAndBytesConfig(
-    load_in_4bit=True,
-    bnb_4bit_compute_dtype=torch.float16,
-    bnb_4bit_quant_type="nf4",
-    bnb_4bit_use_double_quant=True,
-)
-
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-tokenizer.pad_token = tokenizer.eos_token
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 import torch
+import os
 
+# ---------------- CONFIG -----------------
+BASE_MODEL = "mistralai/Mistral-7B-Instruct-v0.2"   # fallback: "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+DATA_FILE = "football_small.csv"                    # your dataset file
+OUTPUT_DIR = "./output"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+# ---------------- LOAD MODEL -------------
 print(f"🧠 Loading base model: {BASE_MODEL}")
-
 tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
 
 model = AutoModelForCausalLM.from_pretrained(
     BASE_MODEL,
+    load_in_4bit=True,
     torch_dtype=torch.float16,
     device_map="auto",
-    load_in_4bit=True,     # QLoRA 4-bit loading for big models
+    low_cpu_mem_usage=True,
+    offload_folder="./offload",
 )
+model.gradient_checkpointing_enable()
+model = prepare_model_for_kbit_training(model)
 
-print("✅ Model loaded successfully.")
-tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
-dataset = load_dataset("csv", data_files={"train": dataset_path})
+# ---------------- PEFT / LoRA -------------
+lora_config = LoraConfig(
+    r=16,
+    lora_alpha=32,
+    target_modules=["q_proj", "v_proj"],
+    lora_dropout=0.05,
+    bias="none",
+    task_type="CAUSAL_LM",
+)
+model = get_peft_model(model, lora_config)
 
-def tokenize_function(batch):
-    return tokenizer(batch["text"], truncation=True, padding="max_length", max_length=256)
+# ---------------- DATA --------------------
+dataset = load_dataset("csv", data_files={"train": DATA_FILE})
+def format_sample(sample):
+    text = sample["text"] if "text" in sample else str(sample)
+    return {"input_ids": tokenizer(text, truncation=True, padding="max_length", max_length=256)["input_ids"]}
+dataset = dataset.map(format_sample, batched=False)
 
-tokenized_dataset = dataset["train"].map(tokenize_function, batched=True)
-tokenized_dataset.set_format("torch")
-
-# Resume from checkpoint if available
-output_dir = "./output"
-resume_checkpoint = None
-if os.path.exists(os.path.join(output_dir, "checkpoint-last")):
-    resume_checkpoint = os.path.join(output_dir, "checkpoint-last")
-
-args = TrainingArguments(
-    output_dir=output_dir,
+# ---------------- TRAINING ----------------
+training_args = TrainingArguments(
+    output_dir=OUTPUT_DIR,
     per_device_train_batch_size=1,
     gradient_accumulation_steps=4,
+    num_train_epochs=1,
     learning_rate=2e-4,
+    fp16=True,
     logging_steps=50,
     save_steps=500,
-    num_train_epochs=3,
-    fp16=True,
-    save_total_limit=3,
-    report_to="none"
+    save_total_limit=2,
+    optim="paged_adamw_32bit",
+    report_to="none",
 )
 
 trainer = Trainer(
     model=model,
-    args=args,
-    train_dataset=tokenized_dataset
+    args=training_args,
+    train_dataset=dataset["train"],
 )
 
-trainer.train(resume_from_checkpoint=resume_checkpoint)
-trainer.save_model(os.path.join(output_dir, "final_llama3_coach"))
-
-print("✅ Training complete. Model saved to:", output_dir)
+print("🚀 Starting fine-tuning...")
+trainer.train()
+model.save_pretrained(os.path.join(OUTPUT_DIR, "final_mistral_coach"))
+print("✅ Training complete. Model saved to:", os.path.join(OUTPUT_DIR, "final_mistral_coach"))
