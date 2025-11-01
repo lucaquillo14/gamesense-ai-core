@@ -14,14 +14,14 @@ DATA_FILE = "football_trimmed.csv"                    # your dataset file
 OUTPUT_DIR = "./output"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# ---------------- LOAD MODEL -------------
+BASE_MODEL = "mistralai/Mistral-7B-Instruct-v0.2"
+
 print(f"🧠 Loading base model: {BASE_MODEL}")
+
+# Load tokenizer
 tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
 
-# ✅ Ensure pad token exists
-if tokenizer.pad_token is None:
-    tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-    model.resize_token_embeddings(len(tokenizer))
+# Load model in 4-bit quantization to fit GPU memory
 model = AutoModelForCausalLM.from_pretrained(
     BASE_MODEL,
     load_in_4bit=True,
@@ -30,8 +30,17 @@ model = AutoModelForCausalLM.from_pretrained(
     low_cpu_mem_usage=True,
     offload_folder="./offload",
 )
+
+# ✅ Fix: ensure pad token exists *after* model is loaded
+if tokenizer.pad_token is None:
+    tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+    model.resize_token_embeddings(len(tokenizer))
+
 model.gradient_checkpointing_enable()
-model = prepare_model_for_kbit_training(model)
+
+print("✅ Model and tokenizer loaded successfully.")
+
+
 
 # ---------------- PEFT / LoRA -------------
 lora_config = LoraConfig(
