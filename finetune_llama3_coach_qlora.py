@@ -58,7 +58,7 @@ print("✅ Model and tokenizer ready.")
 
 # ---------------- DATA ------------------
 print(f"📂 Loading dataset: {DATA_FILE}")
-ds = load_dataset("csv", data_files={"train": DATA_FILE})
+ds = load_dataset("json", data_files={"train": DATA_FILE})
 
 def tokenize_function(sample):
     text = sample.get("text") or str(sample)
