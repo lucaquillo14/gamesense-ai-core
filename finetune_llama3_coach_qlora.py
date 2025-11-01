@@ -10,7 +10,7 @@ import os
 
 # ---------------- CONFIG -----------------
 BASE_MODEL = "mistralai/Mistral-7B-Instruct-v0.2"   # fallback: "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
-DATA_FILE = "football_small.csv"                    # your dataset file
+DATA_FILE = "football_trimmed.csv"                    # your dataset file
 OUTPUT_DIR = "./output"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
