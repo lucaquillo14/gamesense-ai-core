@@ -11,7 +11,7 @@ import torch, os
 
 # ---------------- CONFIG ----------------
 BASE_MODEL = "meta-llama/Meta-Llama-3-8B-Instruct"   # chat model for coaching
-DATA_FILE  = os.path.join(os.path.dirname(__file__), "football_small.csv")  # update if different
+DATA_FILE  = os.path.join(os.path.dirname(__file__), "football_trimmed.csv")  # update if different
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "output")
 OFFLOAD_DIR = os.path.join(os.path.dirname(__file__), "offload")
 os.makedirs(OUTPUT_DIR, exist_ok=True); os.makedirs(OFFLOAD_DIR, exist_ok=True)
