@@ -6,7 +6,7 @@ from datasets import load_dataset
 import torch, os
 
 model_name = "meta-llama/Meta-Llama-3-8B-Instruct"  # or TinyLlama/TinyLlama-1.1B-Chat-v1.0
-dataset_path = "football.csv"  # dataset in same folder
+dataset_path = "football_trimmed.csv"  # dataset in same folder
 
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
