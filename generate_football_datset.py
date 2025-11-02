@@ -71,7 +71,7 @@ for _ in range(750):  # 750 x 4 roles = 3000
 random.shuffle(dataset)
 
 # ====== SAVE ======
-with open("football_tactical_coach_3k.jsonl", "w", encoding="utf-8") as f:
+with open("football_coach_3k.jsonl", "w", encoding="utf-8") as f:
     for ex in dataset:
         json.dump(ex, f, ensure_ascii=False)
         f.write("\n")
