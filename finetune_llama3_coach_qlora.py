@@ -6,9 +6,9 @@ from datasets import load_dataset
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 import torch, os
 
-BASE_MODEL = "meta-llama/Meta-Llama-3-8B-Instruct"
-DATA_FILE  = "football_tactical_technical_5k.jsonl"
-OUTPUT_DIR = "coach_llama3_finetuned"
+BASE_MODEL = "lucaquillo/gamesense-football-coach-v2"
+DATA_FILE  = "football_tactical_coach_3k.jsonl"
+OUTPUT_DIR = "coach_llama3_finetuned_v2"
 
 print("🔹 Loading model and tokenizer…")
 tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
