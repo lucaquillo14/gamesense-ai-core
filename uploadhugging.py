@@ -1,8 +1,8 @@
 from huggingface_hub import upload_folder, create_repo
 
 # 🧠 Change this only if you want a different name
-repo_id = "lucaquillo/gamesense-football-coach-v2"
-local_dir = "coach_llama3_finetuned/final"
+repo_id = "lucaquillo/gamesense-football-coach-v3"
+local_dir = "coach_llama3_finetuned_v3/final"
 
 # ✅ Create repo if it doesn't exist
 create_repo(repo_id, repo_type="model", private=True, exist_ok=True)
