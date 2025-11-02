@@ -10,7 +10,7 @@ from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 import torch, os
 
 BASE_MODEL = "lucaquillo/gamesense-football-coach-v2"
-DATA_FILE  = "football_coach_3k.jsonl"
+DATA_FILE  = "3k.jsonl"
 OUTPUT_DIR = "coach_llama3_finetuned_v3"
 
 print("🔹 Loading model and tokenizer...")
