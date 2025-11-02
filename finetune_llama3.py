@@ -79,6 +79,9 @@ data_collator = default_data_collator
 
 # ----------------- Training -----------------
 print("🚀 Starting fine-tuning…")
+from transformers import TrainingArguments
+from bitsandbytes.optim import AdamW  # ✅ make sure it’s the bnb optimizer
+
 training_args = TrainingArguments(
     output_dir=OUTPUT_DIR,
     per_device_train_batch_size=1,
@@ -90,21 +93,27 @@ training_args = TrainingArguments(
     save_steps=500,
     save_total_limit=2,
     gradient_checkpointing=True,
-    optim="paged_adamw_32bit",  # ✅ string, not imported object
     report_to="none",
 )
 
-import torch.utils.checkpoint
-torch.utils.checkpoint.use_reentrant = False
+# ✅ Override Trainer’s optimizer creation with bitsandbytes manually
+from transformers import Trainer
 
-trainer = Trainer(
+class BnbTrainer(Trainer):
+    def create_optimizer(self):
+        if self.optimizer is None:
+            self.optimizer = AdamW(
+                self.model.parameters(),
+                lr=self.args.learning_rate,
+            )
+        return self.optimizer
+
+trainer = BnbTrainer(
     model=model,
     args=training_args,
     train_dataset=ds,
     data_collator=data_collator,
 )
-
-trainer.train()
 
 # ----------------- Save -----------------
 final_dir = os.path.join(OUTPUT_DIR, "final")
